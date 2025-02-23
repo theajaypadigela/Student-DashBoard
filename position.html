@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Styled Line</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .line {
+            width: 80%;
+            height: 5px;
+            background-color: lightgray;
+            position: relative;
+        }
+
+        .highlight {
+            width: 20%;
+            height: 10px;
+            background-color: limegreen;
+            position: absolute;
+            left: 40%;
+            top: -2.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="line">
+            <div class="highlight"></div>
+        </div>
+    </div>
+
+</body>
+</html>
