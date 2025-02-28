@@ -50,6 +50,10 @@ app.get("/",(req,res)=>{
     res.render("login.ejs");
 });
 
+app.get("/sidebar",(req,res)=>{
+    res.render("sidebar.ejs");
+});
+
 app.get("/page",(req,res)=>{
     res.send("Welcome to the page");
 });
