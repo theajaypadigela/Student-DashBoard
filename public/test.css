@@ -1,40 +1,42 @@
-.sidebar{
-    background-color: #000;
+/* body{
+    background-color: #0000009c;
+}
+*{
     font-family: 'Poppins', sans-serif;
-    font-size: 18px;
+    font-size: 20px;
     color: white;
+} */
+.sidebar{
+    width: 250px;
     position: fixed;
     display: flex;
+    font-family: 'Poppins', sans-serif;
+    font-size: 20px;
+    color: white;
+    
     flex-direction: column !important;
     gap: 25px;
     top: 0;
     left: 0;
-    width: 205px;
-    height: 100vh;
-    z-index: 99999999;
-    padding: 27px;
-    overflow: hidden;
+    /* width: 250px; */
+    height: 100%;
+    background-color: #000;
+    z-index: -1;
+    padding: 20px;
 }
-
-.sidebar-content {
-    height: calc(100vh - 54px);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    gap: 10px;
-    padding-right: 10px;
-}
-
 .sidebar-header{
     display: flex;
     gap: 8px;
     margin-bottom: 30px;
-    align-items: center;
 }
-
+img{
+    
+    width: 30px;
+}
 .sidebar-header img{
+    left: 0;
     width: 75px;
-    height: auto;
+    
 }
 .sidebar-header h4{
     font-size: 18px;
@@ -45,23 +47,13 @@
     font-size: 16px;
     color: #a5aaad;
     font-weight: 700;
-    display: block;
-    width: 100%;
 }
 .pair{
     display: flex;
     gap: 10px;
     align-items: center;
-    padding: 8px 0;
-    cursor: pointer;
 }
-.pair:hover {
-    background-color: #ffffff1a;
-}
-.pair:hover a {
-    color: #fff;
-}
-.sidebar h3{
+h3{
     font-size: 18px;
     color: #3ea175;
     margin-top: 15px;
@@ -72,15 +64,7 @@
     font-size: 16px;
 }
 .logout{
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    margin-top: 10px;
     margin-bottom: 20px;
     color: red;
 }
-
-
-
-
-
-

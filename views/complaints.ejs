@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&family=Roboto+Condensed&family=Source+Sans+Pro:wght@300&display=swap"
+    rel="stylesheet">
+    <link rel="stylesheet" href="/complaints/complaints.css">
+  <link rel="stylesheet" href="/sidebar.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+
+<body>
+    <%- include("sidebar.ejs") %>
+    <nav class="head">
+      <div class="lefticon">
+          <a class="LINK1" href="#">Student</a>
+      </div>
+      <div class="righticon">
+          <a href="#">
+              <img width="50px" src="/assets/Screenshot 2025-02-23 171952.png">
+          </a>
+      </div>
+  </nav>
+  <div class="main">
+    <div class="a">
+      <h1 class="hd-1">COMPLAINTS</h1><br><br>
+    </div>
+    <div class="underline"></div>
+    <a href="comp_new" style="float: right;"><button class="learn-more" >NEW REQUEST</button></a>
+
+    <div class="details data1">
+      <span class="choose">CERTIFICATE</span>
+      <p class="title">MEMO</p>
+      <p class="descrip">Need certificate for applying scholarship</p>
+      <div class="date"></div>
+      <div class="r">STATUS:RESOLVED <span class="tick">✔</span></div>
+    </div>
+
+    <div class="details">
+      <span class="choose">Mess</span>
+      <p class="title">Need A/C repair</p>
+      <p class="descrip">Mess A/C stopped working</p>
+      <div class="date"></div>
+      <!-- rockt  -->
+      <div class="r">STATUS:LAUNCHED <span class="tick">🚀</span></div>
+    </div>
+
+    <div class="details">
+      <span class="choose">Hostel</span>
+      <p class="title">Tap leak</p>
+      <p class="descrip">Fix the tap quickly</p>
+      <div class="date"></div>
+      <div class="r">STATUS:RESOLVED <span class="tick">✔</span></div>
+
+    </div>
+  </div>
+</body>
+
+</html>

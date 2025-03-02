@@ -118,7 +118,6 @@ input:focus{
     cursor: pointer;
     transition: 0.3s;
     text-transform: uppercase; 
-    /* box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);  */
 }
 
 
