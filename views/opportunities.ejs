@@ -39,7 +39,7 @@
                     <ul class="d-flex flex-row ul-1 list-unstyled ">
                         <li class="d-flex align-items-center me-3">
                             <img src="https://img.icons8.com/flat-round/64/000000/play--v1.png" class="img-1 me-2">
-                            <span class="span-hd">Starts on <% opportunitiesData[i].startDate %></span>
+                            <span class="span-hd">Starts on <%= new Date(opportunitiesData[i].start_date).toLocaleDateString() %></span>
                         </li>
                         <li class="d-flex align-items-center me-3">
                             <img src="https://img.icons8.com/cute-clipart/64/000000/planner.png" class="img-1 me-2">
@@ -47,11 +47,11 @@
                         </li>
                         <li class="d-flex align-items-center">
                             <img src="https://img.icons8.com/dusk/64/000000/hourglass-sand-top.png" class="img-1 me-2">
-                            <span class="span-hd">Apply by <%= opportunitiesData[i].applyBy %></span>
+                            <span class="span-hd">Apply by <%= new Date(opportunitiesData[i].end_date).toLocaleDateString() %></span>
                         </li>
                     </ul>
                     <p><%= opportunitiesData[i].description %></p>
-                    <p><strong>Skills Required:</strong> <%= opportunitiesData[i].skillsRequired %></p>
+                    <p><strong>Skills Required:</strong> <%= opportunitiesData[i].skillsrequired %></p>
                     <a href="#" class="apply-1 mt-auto">Apply Now</a>
                 </div>
             </div>

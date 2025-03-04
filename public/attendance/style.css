@@ -4,7 +4,7 @@ html {
 }
 
 body {
-    background-color: #e3edf7;
+    /* background-color: #000000; */
     min-height: 100vh;
     overflow-y: auto !important;
 }
@@ -171,7 +171,7 @@ body {
     width: calc(100% - 250px);
     height: calc(100vh - 60px);
     padding: 25px;
-    background: #e3edf7;
+    background: #f3f4f6;
     position: relative;
     z-index: 1;
     overflow-y: auto !important;

@@ -35,31 +35,19 @@
     <div class="underline"></div>
     <a href="comp_new" style="float: right;"><button class="learn-more" >NEW REQUEST</button></a>
 
+    <% for(let i=complaints.length-1;i>=0;i--){ %>
     <div class="details data1">
-      <span class="choose">CERTIFICATE</span>
-      <p class="title">MEMO</p>
-      <p class="descrip">Need certificate for applying scholarship</p>
-      <div class="date"></div>
-      <div class="r">STATUS:RESOLVED <span class="tick">✔</span></div>
+      <span class="choose"><%= complaints[i].requesttype %></span>
+      <p class="title"><%= complaints[i].title %></p>
+      <p class="descrip"><%= complaints[i].description %></p>
+      <div class="date"><%=complaints[i].date.toLocaleDateString()%></div>
+      <% if(complaints[i].status==1){ %>
+      <div class="r">STATUS: RESOLVED <span class="tick">✔</span></div>
+      <% }else{ %>
+      <div class="r">STATUS: LAUNCHED <span class="tick">🚀</span></div>
+      <% } %>
     </div>
-
-    <div class="details">
-      <span class="choose">Mess</span>
-      <p class="title">Need A/C repair</p>
-      <p class="descrip">Mess A/C stopped working</p>
-      <div class="date"></div>
-      <!-- rockt  -->
-      <div class="r">STATUS:LAUNCHED <span class="tick">🚀</span></div>
-    </div>
-
-    <div class="details">
-      <span class="choose">Hostel</span>
-      <p class="title">Tap leak</p>
-      <p class="descrip">Fix the tap quickly</p>
-      <div class="date"></div>
-      <div class="r">STATUS:RESOLVED <span class="tick">✔</span></div>
-
-    </div>
+    <% } %>
   </div>
 </body>
 

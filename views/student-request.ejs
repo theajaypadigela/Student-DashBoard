@@ -36,16 +36,16 @@
     <div class="underline"></div>
     <a href="req_new" style="float: right;"><button class="learn-more" >NEW REQUEST</button></a>
 
-    <% for(let i=0;i<studentRequestData.length;i++){ %>
+    <% for(let i=studentRequestData.length-1;i>=0;i--){ %>
     <div class="details data1">
-      <span class="choose"><%= studentRequestData[i].choose %></span>
+      <span class="choose"><%= studentRequestData[i].requesttype %></span>
       <p class="title"><%= studentRequestData[i].title %></p>
       <p class="descrip"><%= studentRequestData[i].description %></p>
-      <div class="date"><%= studentRequestData[i].date %></div>
-      <% if(studentRequestData[i].status=="INITIATED"){ %>
-      <div class="r">STATUS: <%= studentRequestData[i].status %> <span class="tick">🚀</span></div>
+      <div class="date"><%= studentRequestData[i].date.toLocaleDateString() %></div>
+      <% if(studentRequestData[i].status==0){ %>
+      <div class="r">STATUS: Initiated <span class="tick">🚀</span></div>
       <% }else{ %>
-      <div class="r">STATUS: <%= studentRequestData[i].status %> <span class="tick">✔</span></div>
+      <div class="r">STATUS: Resolved <span class="tick">✔</span></div>
       <% } %>
     </div>
     <% } %>

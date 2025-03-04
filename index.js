@@ -7,6 +7,7 @@ import { Strategy } from "passport-local";
 import GoogleStrategy from "passport-google-oauth2";
 import session from "express-session";
 import env from "dotenv";
+import axios from "axios";
 
 const app = express();
 app.use(bodyParser.json());
@@ -33,6 +34,8 @@ const db = new pg.Client({
     })
 );
 
+
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -43,8 +46,9 @@ app.use(express.static('public'));
 app.use('/assets', express.static('assets'));
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
+
+let attendanceData=[];
 
 app.get("/",(req,res)=>{
     res.render("login.ejs");
@@ -52,15 +56,6 @@ app.get("/",(req,res)=>{
 
 app.get("/sidebar",(req,res)=>{
     res.render("sidebar.ejs");
-});
-
-app.get("/page",(req,res)=>{
-    if(req.isAuthenticated()){
-        // res.render("page.ejs");
-        res.render("sidebar.ejs");
-    }else{
-        res.redirect("/login");
-    }
 });
 
 app.get("/login",(req,res)=>{
@@ -73,7 +68,7 @@ app.get("/register",(req,res)=>{
 
 app.post("/login",
     passport.authenticate("local",{
-        successRedirect:"/page",
+        successRedirect:"/dashboard",
         failureRedirect:"/fail"
     })
 );
@@ -82,59 +77,87 @@ app.get("/fail",(req,res)=>{
     res.send("Failed to login");
 });
 
-app.get("/dashboard",(req,res)=>{
+app.get("/dashboard",async(req,res)=>{
     if(req.isAuthenticated()){
-        res.render("dashboard.ejs");
+        const result=await db.query("select * from tasks");
+        const taskData=result.rows;
+        let quote;
+        let author;
+        try{
+            const response = await axios.get('https://zenquotes.io/api/random');
+            quote=response.data[0].q;
+            author=response.data[0].a;
+            console.log(quote);
+            console.log(author);
+        }catch(err){
+            console.log(err);
+        }
+
+        res.render("dashboard.ejs",{
+            list:taskData,
+            quote:quote,
+            author:author
+        });
     }else{
         res.redirect("/login");
     }
 });
 
-const attendanceData=[
-    {
-        subject:"Mathematics",
-        present:60,
-        absent:40,
-        total:100,
-        percentage: 60/100*100,
-        color:"#e91e63"
-    },
-    {
-        subject:"Physics",
-        present:80,
-        absent:20,
-        total:300,
-        percentage: 80/100*100,
-        color:"#ff9800"
-    },
-    {
-        subject:"Chemistry",
-        present:70,
-        absent:30,
-        total:100,
-        percentage: 70/100*100,
-        color:"#3f51b5"
-    },
-    {
-        subject:"Biology",
-        present:90,
-        absent:10,
-        total:100,
-        percentage: 90/100*100,
-        color:"#4caf50"
-    },
-    {
-        subject:"English",
-        present:65,
-        absent:35,
-        total:100,
-        percentage: 65/100*100,
-        color:"#9c27b0"
-    }   
-]
+app.post("/addTask", async (req,res)=>{
+    const task=req.body.task;
+    console.log(task);
+    const result=await db.query("insert into tasks(task) values($1)",[task]);
+    res.redirect("/dashboard");
+});
 
-app.get("/attendance",(req,res)=>{
+app.post("/deleteTask",async(req,res)=>{
+    const taskId=req.body.taskId;
+    const result=await db.query("delete from tasks where id=($1)",[taskId]);
+    res.redirect("/dashboard");
+})
+
+
+
+async function fillAttendanceData(email){
+    const result=await db.query("select * from users where email=$1",[email]);
+    const id=result.rows[0].id;
+    const result2=await db.query("select present,absent,subject_id,color,subject_name from attendance inner join subjects on attendance.subject_id=subjects.id  where u_id=$1",[id]);
+    
+    attendanceData = new Array(result2.rows.length+1);
+    let total=0;
+    let present=0;
+    let absent=0;
+    
+    for(let i=0;i<result2.rows.length;i++){
+
+        attendanceData[i] = {};
+        
+        attendanceData[i].subject=result2.rows[i].subject_name;
+        attendanceData[i].present=result2.rows[i].present;
+        present+=attendanceData[i].present;
+        attendanceData[i].absent=result2.rows[i].absent;
+        absent+=attendanceData[i].absent;
+        attendanceData[i].total=attendanceData[i].present+attendanceData[i].absent;
+        total+=attendanceData[i].total;
+        attendanceData[i].color=result2.rows[i].color;
+        const percentage=Math.round((result2.rows[i].present / (result2.rows[i].present + result2.rows[i].absent)) * 100);
+        attendanceData[i].percentage=percentage;
+    }
+    attendanceData[result2.rows.length] = {};
+    attendanceData[result2.rows.length].subject="Total";
+    attendanceData[result2.rows.length].total=total;
+    attendanceData[result2.rows.length].present=present;
+    attendanceData[result2.rows.length].absent=absent;
+    attendanceData[result2.rows.length].color="#FF6B6B";
+    const percentage=Math.round((present / total) * 100);
+    attendanceData[result2.rows.length].percentage=percentage;
+    return attendanceData;
+}
+
+app.get("/attendance",async(req,res)=>{
     if(req.isAuthenticated()){
+        attendanceData=await fillAttendanceData(req.user.email);
+        // console.log(attendanceData);
         res.render("attendance.ejs",{
             attendanceData:attendanceData
         });
@@ -143,26 +166,51 @@ app.get("/attendance",(req,res)=>{
     }
 });
 
-app.get('/timetable', function(req, res) {
-    const subjectColors = {
-      "Math": "accent-pink-gradient",
-      "Science": "accent-orange-gradient",
-      "English": "accent-green-gradient",
-      "History": "accent-cyan-gradient",
-      "Geography": "accent-blue-gradient",
-      "Physics": "accent-purple-gradient",
-      "Chemistry": "accent-orange-gradient",
-      "Biology": "accent-green-gradient"
-    };
+const colors=["accent-pink-gradient","accent-orange-gradient","accent-green-gradient","accent-cyan-gradient","accent-blue-gradient","accent-purple-gradient","accent-orange-gradient","accent-green-gradient"];
 
-    const timetable = {
-      "mon1": "Math", "mon3": "English", "mon4": "History",
-      "tue2": "Math", "tue4": "Geography",
-      "wed1": "Science", "wed3": "Physics", "wed4": "Chemistry",
-      "thu1": "Biology", "thu3": "English", "thu4": "History",
-      "fri2": "Math", "fri4": "Geography"
-    };
-
+async function fillSubjectColors(){
+    const result=await db.query("select * from subjects");
+    const subjectData=result.rows;
+    const subjectColors={};
+    for(let i=0;i<subjectData.length;i++){
+        subjectColors[subjectData[i].subject_name]=colors[i%colors.length];
+    }
+    return subjectColors;
+}
+app.get('/timetable', async function(req, res) {
+    
+    const subjectColors = await fillSubjectColors();
+    const timetable={};
+    const result=await db.query("select * from timetable");
+    const timetableData=result.rows;
+    for(let i=0;i<timetableData.length;i++){
+       const period = i + 1;  
+       
+       if(timetableData[i].mon != null){
+        let str = "mon" + period;
+        timetable[str] = timetableData[i].mon;
+       }
+       if(timetableData[i].tue != null){
+        let str = "tue" + period;
+        timetable[str] = timetableData[i].tue;
+       }
+       if(timetableData[i].wed != null){
+        let str = "wed" + period;
+        timetable[str] = timetableData[i].wed;
+       }
+       if(timetableData[i].thu != null){
+        let str = "thu" + period;  
+        timetable[str] = timetableData[i].thu;
+       }
+       if(timetableData[i].fri != null){
+        let str = "fri" + period;
+        timetable[str] = timetableData[i].fri;
+       }
+       if(timetableData[i].sat != null){
+        let str = "sat" + period;
+        timetable[str] = timetableData[i].sat;
+       }
+    }
     res.render('timetable.ejs', { 
         name: "Guest", 
         subjectColors: subjectColors,
@@ -170,10 +218,20 @@ app.get('/timetable', function(req, res) {
     });
 });
 
-const title=["Web Development","Data Structure","Operating System","Computer Network","Database Management System"];
 
-app.get("/study-material",(req,res)=>{
+
+app.get("/study-material",async(req,res)=>{
     if(req.isAuthenticated()){
+        const result1=await db.query("select * from users where email=$1",[req.user.email]);
+        const id=result1.rows[0].id;
+
+        const result2=await db.query("select class_id from students where user_id=$1",[id]);
+        const class_id=result2.rows[0].class_id;
+
+        const result3=await db.query("select subject_name from subjects where class_id=$1",[class_id]);
+        const title=result3.rows.map(row=>row.subject_name);
+
+        
         res.render("study-material.ejs",{
             title:title
         });
@@ -182,52 +240,12 @@ app.get("/study-material",(req,res)=>{
     }
 });
 
-const libraryData=[
-    {
-        title:"Artificial Intelligence: A Modern Approach",
-        rack:"1",
-        books:5
-    },
-    {
-        title:"The Emotion Machine",
-        rack:"1",
-        books:3
-    },  
-    {
-        title:"Super Intelligence: Paths,Dangers,Strategies",
-        rack:"1",
-        books:2
-    },
-    {   
-        title:"The Emotion Machine",
-        rack:"1",
-        books:3
-    },
-    {
-        title:"The Emotion Machine",
-        rack:"1",
-        books:3
-    },  
-    {
-        title:"The Emotion Machine",
-        rack:"1",
-        books:3
-    },  
-    {
-        title:"The Emotion Machine",
-        rack:"1",
-        books:3
-    },    
-    {
-        title:"The Emotion Machine",
-        rack:"1",
-        books:3
-    },  
-    
-]
 
-app.get("/library",(req,res)=>{
+
+app.get("/library",async(req,res)=>{
     if(req.isAuthenticated()){
+        const result=await db.query("select * from library");
+        const libraryData=result.rows;
         res.render("library.ejs",{
             libraryData:libraryData
         });
@@ -236,50 +254,13 @@ app.get("/library",(req,res)=>{
     }
 });
 
-const opportunitiesData=[
-    {
-        title:"Google Internship 2025",
-        startDate:"24 Mar 2025",
-        duration:"1 Month",
-        applyBy:"20 Mar 2025",
-        description:"Google looking for undergraduate students.",
-        skillsRequired:"C, C++, Java, Data Structures and Algorithms"
-    },
-    {
-        title:"Research Intern at MIT",
-        startDate:"31 April 2025",
-        duration:"3 Months",
-        applyBy:"15 April 2025",
-        description:"MIT looking for talented researchers.",
-        skillsRequired:"Machine Learning, Computer Vision"
-    },
-    {
-        title:"Google Internship 2025",
-        startDate:"24 Mar 2025",
-        duration:"1 Month",
-        applyBy:"20 Mar 2025",
-        description:"Google looking for undergraduate students.",
-        skillsRequired:"C, C++, Java, Data Structures and Algorithms"
-    },
-    {
-        title:"Research Intern at MIT",
-        startDate:"31 April 2025",
-        duration:"3 Months",
-        applyBy:"15 April 2025",
-        description:"MIT looking for talented researchers.",
-        skillsRequired:"Machine Learning, Computer Vision"
-    },
-    {
-        title:"Google Internship 2025",
-        startDate:"24 Mar 2025",
-        duration:"1 Month",
-        applyBy:"20 Mar 2025",
-        description:"MIT looking for talented researchers."
-    }
-]
 
-app.get("/opportunities",(req,res)=>{
+
+app.get("/opportunities",async(req,res)=>{
     if(req.isAuthenticated()){
+        const result=await db.query("select * from opportunities");
+        const opportunitiesData=result.rows;
+        console.log(opportunitiesData);
         res.render("opportunities.ejs",{
             opportunitiesData:opportunitiesData
         });
@@ -288,37 +269,12 @@ app.get("/opportunities",(req,res)=>{
     }
 });
 
-const date=new Date();
-const day=date.getDate();
-const month=date.getMonth();
-const year=date.getFullYear();
 
-const studentRequestData=[
-    {
-        choose:"Certificate",
-        title:"MEMO",
-        description:"Need certificate for applying scholarship",
-        status:"RESOLVED",
-        date:`${day}/${month}/${year}`
-    },
-    {
-        choose:"CHOOSE",
-        title:"TITLE",
-        description:"description is written here",
-        status:"INITIATED",
-        date:`${day}/${month}/${year}`
-    },
-    {
-        choose:"Certificate",
-        title:"MEMO",
-        description:"Need certificate for applying scholarship",
-        status:"RESOLVED",
-        date:`${day}/${month}/${year}`
-    }
-]
-
-app.get("/student-request",(req,res)=>{
+app.get("/student-request",async(req,res)=>{
     if(req.isAuthenticated()){
+        const result=await db.query("select * from requests");
+        const studentRequestData=result.rows;
+        console.log(studentRequestData);
         res.render("student-request.ejs",{
             studentRequestData:studentRequestData
         });
@@ -328,21 +284,52 @@ app.get("/student-request",(req,res)=>{
 });
 
 app.get("/student-request/req_new",(req,res)=>{
-    res.render("req_new.ejs");
+    if(req.isAuthenticated()){
+        res.render("req_new.ejs");
+    }else{
+        res.redirect("/login");
+    }
 });
 
-app.get("/complaints",(req,res)=>{
-    res.render("complaints.ejs");
+app.post("/newrequest",async(req,res)=>{
+    const title=req.body.name;
+    const requestType=req.body["request-type"];
+    const description=req.body.description;
+    const result=await db.query("insert into requests(title,requestType,description) values($1,$2,$3)",[title,requestType,description]);
+    res.redirect("/student-request");
+});
+
+app.get("/complaints", async(req,res)=>{
+    if(req.isAuthenticated()){
+        const result=await db.query("select * from complaints");
+        const complaints=result.rows;
+        // console.log(complaints);
+        res.render("complaints.ejs",{complaints:complaints});
+    }else{
+        res.redirect("/login");
+    }
 });
 
 app.get("/complaints/comp_new",(req,res)=>{
-    res.render("comp_new.ejs");
+    if(req.isAuthenticated()){
+        res.render("comp_new.ejs");
+    }else{
+        res.redirect("/login");
+    }
+});
+
+app.post("/newcomplaint",async(req,res)=>{
+    const title=req.body.name;
+    const requestType=req.body["request-type"];
+    const description=req.body.description;
+    const result=await db.query("insert into complaints(title,requestType,description) values($1,$2,$3)",[title,requestType,description]);
+    res.redirect("/complaints");
 });
 
 app.get(
   "/auth/google/secrets",
   passport.authenticate("google", {
-    successRedirect: "/page",
+    successRedirect: "/dashboard",
     failureRedirect: "/login",
   })
 );
@@ -379,7 +366,7 @@ app.post("/register",async(req,res)=>{
                             // alert("Error in registration");
                             res.redirect("/register");
                         }else{
-                            res.redirect("/page");
+                            res.redirect("/dashboard");
                         }
                     }); 
                 }

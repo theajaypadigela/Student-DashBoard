@@ -32,7 +32,8 @@
         <div class="attendance-container">
          
            <% for(let i=0;i<attendanceData.length;i++){ %>
-          <div class="attendance-card">
+            
+          <div class="attendance-card" style="<%= i === attendanceData.length-1 ? 'background-color: #f0f0f0;' : '' %>">
             <div class="skill">
               <div class="outer">
                 <div class="inner">

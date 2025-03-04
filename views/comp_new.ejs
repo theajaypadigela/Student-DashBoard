@@ -18,7 +18,7 @@
     <div class="main">
     <h1 class="one">NEW COMPLAINT</h1>
     <div class="underline"></div>
-    <form action="">
+    <form action="/newcomplaint" method="post">
         <div class="ce">
             <h1 class="two">Raise a complaint</h1>
             <div class="form-group">
@@ -27,15 +27,15 @@
                 <label for="request-type">Request Regarding</label>
                 <select id="request-type" class="underline-input underline-input3" name="request-type">
                     <option value="Choose">Choose</option>
-                    <option value="Certificate">Hostel</option>
-                    <option value="Sick Leave">Mess</option>
-                    <option value="Others">Faculty</option>
-                    <option value="Grade Sheet">Other</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Mess">Mess</option>
+                    <option value="Faculty">Faculty</option>
+                    <option value="Others">Other</option>
                 </select>
                 <label for="description">Description</label>
                 <textarea name="description" class="underline-input desc underline-input2" placeholder="Your Description here...."
                     id="description" required></textarea>
-                    <button class="button">
+                    <button class="button" type="submit">
                         Submit <span class="arrow">➜</span>
                     </button>
             </div>
