@@ -8,9 +8,12 @@ import GoogleStrategy from "passport-google-oauth2";
 import session from "express-session";
 import env from "dotenv";
 import axios from "axios";
+import connectPgSimple from "connect-pg-simple";
 
 const app = express();
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 const port=3000;
 const saltRounds = 10;
 env.config();
@@ -24,21 +27,24 @@ const db = new pg.Client({
   });
   db.connect();
 
+  const pgSession = connectPgSimple(session);  
+
   app.use(session({
-      secret:process.env.SESSION_SECRET,
-      resave:false,
-      saveUninitialized:true,
-      cookie:{
-          maxAge:1000*60*60*24  
-        }
-    })
-);
-
-
+    store: new pgSession({
+        pool: db,
+        tableName: "session"
+    }),
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24,
+    }
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
-
 
 app.set('view engine','ejs');
 
@@ -47,16 +53,14 @@ app.use('/assets', express.static('assets'));
 
 app.use(bodyParser.json());
 
-
 let attendanceData=[];
 
 app.get("/",(req,res)=>{
-    res.render("login.ejs");
+    
+        res.redirect("/dashboard");
+   
 });
 
-app.get("/sidebar",(req,res)=>{
-    res.render("sidebar.ejs");
-});
 
 app.get("/login",(req,res)=>{
     res.render("login.ejs");
@@ -73,17 +77,96 @@ app.post("/login",
     })
 );
 
+app.get("/logout", (req, res) => {
+    req.logout(function (err) {
+      if (err) {
+        return next(err);
+      }
+      res.redirect("/");
+    });
+  });
+
+app.post("/register",async(req,res)=>{
+    const email=req.body.email;
+    const password=req.body.password;
+    const name=req.body.name;
+    try{
+        const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
+            email,
+          ]);
+      
+          if (checkResult.rows.length > 0) {
+            // alert("User already exists");
+            res.redirect("/login");
+          }else{
+            bcrypt.hash(password,saltRounds,async(err,hash)=>{
+                if(err){
+                    console.log(err);
+                    // alert("Error in registration");
+                    res.redirect("/register");
+                }else{
+                    const result = await db.query("insert into users(name,email,password) values($1,$2,$3) RETURNING *", [name, email, hash]);
+                    const user=result.rows[0];
+                    req.login(user,(err)=>{
+                        if(err){
+                            console.log(err);
+                            // alert("Error in registration");
+                            res.redirect("/register");
+                        }else{
+                            res.redirect("/dashboard");
+                        }
+                    }); 
+                }
+            });
+
+          }
+        } catch(err) {
+            console.error("Error in registration", err);
+            res.redirect("/register");
+        }
+});
+
+app.get(
+    "/auth/google/secrets",
+    passport.authenticate("google", {
+      successRedirect: "/dashboard",
+      failureRedirect: "/login",
+    })
+  );
+  
+  app.get("/auth/google",
+      passport.authenticate("google", { scope: ["profile", "email"] })
+  );
+
 app.get("/fail",(req,res)=>{
     res.send("Failed to login");
 });
 
-app.get("/dashboard",async(req,res)=>{
+
+app.use((req,res,next)=>{
     if(req.isAuthenticated()){
-        const result=await db.query("select * from tasks");
-        const taskData=result.rows;
-        let quote;
-        let author;
-        try{
+        next();
+    }else{
+        res.redirect("/login");
+    }
+});
+
+let name;
+app.use((req,res,next)=>{
+    if(req.isAuthenticated()){
+        name=req.user.name;
+        console.log(name);
+        next();
+    }
+});
+
+
+app.get("/dashboard",async(req,res)=>{
+    const result=await db.query("select * from tasks");
+    const taskData=result.rows;
+    let quote;
+    let author;
+    try{
             const response = await axios.get('https://zenquotes.io/api/random');
             quote=response.data[0].q;
             author=response.data[0].a;
@@ -94,13 +177,12 @@ app.get("/dashboard",async(req,res)=>{
         }
 
         res.render("dashboard.ejs",{
+            name:name,
             list:taskData,
             quote:quote,
             author:author
         });
-    }else{
-        res.redirect("/login");
-    }
+    
 });
 
 app.post("/addTask", async (req,res)=>{
@@ -115,7 +197,6 @@ app.post("/deleteTask",async(req,res)=>{
     const result=await db.query("delete from tasks where id=($1)",[taskId]);
     res.redirect("/dashboard");
 })
-
 
 
 async function fillAttendanceData(email){
@@ -155,15 +236,13 @@ async function fillAttendanceData(email){
 }
 
 app.get("/attendance",async(req,res)=>{
-    if(req.isAuthenticated()){
-        attendanceData=await fillAttendanceData(req.user.email);
-        // console.log(attendanceData);
-        res.render("attendance.ejs",{
+    attendanceData=await fillAttendanceData(req.user.email);
+    // console.log(attendanceData);
+    res.render("attendance.ejs",{
+            name:name,
             attendanceData:attendanceData
         });
-    }else{
-        res.redirect("/login");
-    }
+    
 });
 
 const colors=["accent-pink-gradient","accent-orange-gradient","accent-green-gradient","accent-cyan-gradient","accent-blue-gradient","accent-purple-gradient","accent-orange-gradient","accent-green-gradient"];
@@ -212,7 +291,7 @@ app.get('/timetable', async function(req, res) {
        }
     }
     res.render('timetable.ejs', { 
-        name: "Guest", 
+        name: name, 
         subjectColors: subjectColors,
         timetable: timetable
     });
@@ -221,74 +300,70 @@ app.get('/timetable', async function(req, res) {
 
 
 app.get("/study-material",async(req,res)=>{
-    if(req.isAuthenticated()){
-        const result1=await db.query("select * from users where email=$1",[req.user.email]);
-        const id=result1.rows[0].id;
+    const result1=await db.query("select * from users where email=$1",[req.user.email]);
+    const id=result1.rows[0].id;
 
         const result2=await db.query("select class_id from students where user_id=$1",[id]);
-        const class_id=result2.rows[0].class_id;
+        console.log(result2.rows.length);
+        if(result2.rows.length===0){
+            res.render("study-material.ejs",{
+                name:name,
+                title:[]
+            });
+            // alert("You are not a student");
+        }else{
+            const class_id=result2.rows[0].class_id;
 
         const result3=await db.query("select subject_name from subjects where class_id=$1",[class_id]);
         const title=result3.rows.map(row=>row.subject_name);
 
         
         res.render("study-material.ejs",{
+            name:name,
             title:title
         });
-    }else{
-        res.redirect("/login");
-    }
+        }
 });
 
 
 
 app.get("/library",async(req,res)=>{
-    if(req.isAuthenticated()){
-        const result=await db.query("select * from library");
-        const libraryData=result.rows;
-        res.render("library.ejs",{
+    const result=await db.query("select * from library");
+    const libraryData=result.rows;
+    res.render("library.ejs",{
+            name:name,
             libraryData:libraryData
         });
-    }else{
-        res.redirect("/login");
-    }
+    
 });
 
 
 
 app.get("/opportunities",async(req,res)=>{
-    if(req.isAuthenticated()){
-        const result=await db.query("select * from opportunities");
-        const opportunitiesData=result.rows;
-        console.log(opportunitiesData);
+    const result=await db.query("select * from opportunities");
+    const opportunitiesData=result.rows;
+    console.log(opportunitiesData);
         res.render("opportunities.ejs",{
+            name:name,
             opportunitiesData:opportunitiesData
         });
-    }else{
-        res.redirect("/login");
-    }
+        
 });
 
 
 app.get("/student-request",async(req,res)=>{
-    if(req.isAuthenticated()){
-        const result=await db.query("select * from requests");
-        const studentRequestData=result.rows;
-        console.log(studentRequestData);
-        res.render("student-request.ejs",{
+    const result=await db.query("select * from requests");
+    const studentRequestData=result.rows;
+    console.log(studentRequestData);
+    res.render("student-request.ejs",{
+            name:name,
             studentRequestData:studentRequestData
         });
-    }else{
-        res.redirect("/login");
-    }
+    
 });
 
 app.get("/student-request/req_new",(req,res)=>{
-    if(req.isAuthenticated()){
-        res.render("req_new.ejs");
-    }else{
-        res.redirect("/login");
-    }
+    res.render("req_new.ejs");
 });
 
 app.post("/newrequest",async(req,res)=>{
@@ -300,22 +375,19 @@ app.post("/newrequest",async(req,res)=>{
 });
 
 app.get("/complaints", async(req,res)=>{
-    if(req.isAuthenticated()){
-        const result=await db.query("select * from complaints");
-        const complaints=result.rows;
-        // console.log(complaints);
-        res.render("complaints.ejs",{complaints:complaints});
-    }else{
-        res.redirect("/login");
-    }
+    const result=await db.query("select * from complaints");
+    const complaints=result.rows;
+    // console.log(complaints);
+    res.render("complaints.ejs",{
+        name:name,
+        complaints:complaints
+    });
 });
 
 app.get("/complaints/comp_new",(req,res)=>{
-    if(req.isAuthenticated()){
-        res.render("comp_new.ejs");
-    }else{
-        res.redirect("/login");
-    }
+    res.render("comp_new.ejs",{
+        name:name
+    });
 });
 
 app.post("/newcomplaint",async(req,res)=>{
@@ -326,64 +398,13 @@ app.post("/newcomplaint",async(req,res)=>{
     res.redirect("/complaints");
 });
 
-app.get(
-  "/auth/google/secrets",
-  passport.authenticate("google", {
-    successRedirect: "/dashboard",
-    failureRedirect: "/login",
-  })
-);
 
-app.get("/auth/google",
-    passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-
-app.post("/register",async(req,res)=>{
-    const email=req.body.email;
-    const password=req.body.password;
-    const name=req.body.name;
-    try{
-        const checkResult = await db.query("SELECT * FROM users WHERE email = $1", [
-            email,
-          ]);
-      
-          if (checkResult.rows.length > 0) {
-            // alert("User already exists");
-            res.redirect("/login");
-          }else{
-            bcrypt.hash(password,saltRounds,async(err,hash)=>{
-                if(err){
-                    console.log(err);
-                    // alert("Error in registration");
-                    res.redirect("/register");
-                }else{
-                    const result = await db.query("insert into users(name,email,password) values($1,$2,$3) RETURNING *", [name, email, hash]);
-                    const user=result.rows[0];
-                    req.login(user,(err)=>{
-                        if(err){
-                            console.log(err);
-                            // alert("Error in registration");
-                            res.redirect("/register");
-                        }else{
-                            res.redirect("/dashboard");
-                        }
-                    }); 
-                }
-            });
-
-          }
-        } catch(err) {
-            console.error("Error in registration", err);
-            res.redirect("/register");
-        }
-});
 
 passport.use("local",new Strategy({ usernameField: "email" },async function verify(email,password,cd){
     try{
         const result=await db.query("select * from users where email=$1",[email]);
         if(result.rows.length===0){
-            return cd("user not found");
+            return cd(null, false, { message: "User not found" });
         }else{
             const user=result.rows[0];
             const storedHashedPassword=user.password;
@@ -395,7 +416,7 @@ passport.use("local",new Strategy({ usernameField: "email" },async function veri
                     if(valid){
                         return cd(null,user);
                     }else{
-                        return cd(null,false);
+                        return cd(null, false, { message: "Invalid password" });
                     }
                 }
             });
@@ -420,7 +441,7 @@ passport.use("google",
     async (accessToken, refreshToken, profile, cb) =>{
         try{
             const result=await db.query("select * from users where email=$1 ",[profile.email]);
-            if(result.rows===0){
+            if(result.rows.length===0){
                 const newUser=await db.query("insert into users (name,email,password) values ($1,$2,$3) ",[profile.displayName,profile.email,"google"]);
                 return cb(null, newUser.rows[0]);
             }else{
@@ -448,6 +469,5 @@ passport.deserializeUser(async (id, done) => {
         done(err);
     }
 });
-
 
 app.listen(port,()=>console.log(`Server is running on port ${port}`));
