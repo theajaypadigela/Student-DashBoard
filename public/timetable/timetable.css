@@ -3,7 +3,7 @@
 .sidebar{
     width: 260px !important; 
     height: 100vh !important;
-    overflow: hidden !important;
+    /* overflow: hidden !important; */
     position: fixed;
     top: 0;
     left: 0;
@@ -15,7 +15,8 @@
     height: calc(100vh - 54px);
     display: flex;
     flex-direction: column;
-    overflow-y: hidden !important;
+    /* overflow-y: hidden !important; */
+    scrollbar-width: none;
     gap: 6px !important;
     padding-right: 10px;
 }

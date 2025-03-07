@@ -363,7 +363,9 @@ app.get("/student-request",async(req,res)=>{
 });
 
 app.get("/student-request/req_new",(req,res)=>{
-    res.render("req_new.ejs");
+    res.render("req_new.ejs",{
+        name:name
+    });
 });
 
 app.post("/newrequest",async(req,res)=>{
@@ -396,6 +398,15 @@ app.post("/newcomplaint",async(req,res)=>{
     const description=req.body.description;
     const result=await db.query("insert into complaints(title,requestType,description) values($1,$2,$3)",[title,requestType,description]);
     res.redirect("/complaints");
+});
+
+app.get("/alumni",async(req,res)=>{
+    const result=await db.query("select * from alumini order by id");
+    // console.log(result.rows[1]);
+    res.render("alumni.ejs",{
+        name:name,
+        aluminiData:result.rows
+    });
 });
 
 

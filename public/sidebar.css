@@ -1,3 +1,6 @@
+.sidebar {
+    width: 250px ;
+}
 .sidebar{
     background-color: #000;
     font-family: 'Poppins', sans-serif;
@@ -13,7 +16,15 @@
     height: 100vh;
     z-index: 99999999;
     padding: 27px;
-    overflow: hidden;
+    
+    scrollbar-width: none;  
+    -ms-overflow-style: none;
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none !important;
+    -webkit-appearance: none;
+    width: 3px !important;
 }
 
 .sidebar-content {
@@ -58,26 +69,40 @@
 .pair:hover {
     background-color: #ffffff1a;
 }
-.pair:hover a {
-    color: #fff;
-}
+
 .sidebar h3{
     font-size: 18px;
-    color: #3ea175;
+    color: #3ea175;;
     margin-top: 15px;
     margin-bottom: 5px;
+  margin-bottom: 5px;
 }
-
 .sidebar i{
     font-size: 16px;
+   font-size: 16px;
 }
 .logout{
     display: flex;
     gap: 10px;
     margin-top: 15px;
     margin-bottom: 20px;
-    color: red;
+    color: red;om: 20px;
+ color: red;
 }
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f0f0f0 !important;
+    background: #f0f0f0 !important;
+}   
+.sidebar::-webkit-scrollbar-thumb {
+    background: #26cc3f !important;
+    border-radius: 3px !important;
+  border-radius: 3px !important;
+}
+
+
+
+
 
 
 

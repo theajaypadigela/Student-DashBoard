@@ -1,3 +1,6 @@
+.sidebar-content {
+    scrollbar-width: none;
+}
 *{
     margin:0;
     padding: 0;

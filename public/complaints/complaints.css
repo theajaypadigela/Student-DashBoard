@@ -15,7 +15,8 @@
     height: calc(100vh - 54px);
     display: flex;
     flex-direction: column;
-    overflow-y: hidden !important;
+    /* overflow-y: hidden !important; */
+    scrollbar-width: none;
     gap: 6px !important;
     padding-right: 10px;
 }
