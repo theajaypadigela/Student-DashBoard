@@ -70,7 +70,7 @@ A comprehensive web application designed to help students manage their academic 
 To quickly test the application without creating a new account, you can use the following guest credentials:
 
 - **Username**: guestuser@gmail.com
-- **Password**: guestpassword
+- **Password**: guestuser
 
 ## Technologies Used
 
