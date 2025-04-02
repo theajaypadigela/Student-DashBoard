@@ -63,6 +63,15 @@ A comprehensive web application designed to help students manage their academic 
 - Access to alumni information
 - Networking opportunities
 
+## Testing the Application
+
+### Guest User Access
+
+To quickly test the application without creating a new account, you can use the following guest credentials:
+
+- **Username**: guestuser@gmail.com
+- **Password**: guestpassword
+
 ## Technologies Used
 
 - **Frontend**: HTML, CSS, JavaScript, EJS (Embedded JavaScript)

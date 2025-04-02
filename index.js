@@ -45,7 +45,7 @@ app.use(session({
     saveUninitialized: false,
     rolling: true,
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24,
+        maxAge: 1000*60*60*24,
     }
 }));
 
@@ -215,8 +215,15 @@ async function fillAttendanceData(email){
     let present=0;
     let absent=0;
     
+    const subjectColors = {
+        "Mathematics": "#FF6B6B",
+        "Computer Science": "#4ECDC4",
+        "Physics": "#FFD166",
+        "English": "#118AB2",
+        "Chemistry": "#06D6A0"
+    };
+    
     for(let i=0;i<result2.rows.length;i++){
-
         attendanceData[i] = {};
         
         attendanceData[i].subject=result2.rows[i].subject_name;
@@ -226,10 +233,17 @@ async function fillAttendanceData(email){
         absent+=attendanceData[i].absent;
         attendanceData[i].total=attendanceData[i].present+attendanceData[i].absent;
         total+=attendanceData[i].total;
-        attendanceData[i].color=result2.rows[i].color;
+        
+        if (result2.rows[i].color) {
+            attendanceData[i].color = result2.rows[i].color;
+        } else {
+            attendanceData[i].color = subjectColors[result2.rows[i].subject_name] || "#" + ((1<<24)*Math.random() | 0).toString(16);
+        }
+        
         const percentage=Math.round((result2.rows[i].present / (result2.rows[i].present + result2.rows[i].absent)) * 100);
         attendanceData[i].percentage=percentage;
     }
+    
     attendanceData[result2.rows.length] = {};
     attendanceData[result2.rows.length].subject="Total";
     attendanceData[result2.rows.length].total=total;
