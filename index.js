@@ -10,6 +10,9 @@ import env from "dotenv";
 import axios from "axios";
 import connectPgSimple from "connect-pg-simple";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,11 +22,11 @@ const saltRounds = 10;
 env.config();
 
 const pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL, 
-    ssl: {
-        rejectUnauthorized: false,
-        ca: undefined
-    }
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: true,
+    ca: fs.readFileSync(path.join(__dirname, 'assets', 'cert', 'ca.pem')).toString()
+  }
 });
 
 
