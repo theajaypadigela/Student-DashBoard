@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
@@ -9,7 +12,6 @@ import session from "express-session";
 import env from "dotenv";
 import axios from "axios";
 import connectPgSimple from "connect-pg-simple";
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
