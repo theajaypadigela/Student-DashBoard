@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Attendance - Admin</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-wrapper h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('sidebar.ejs') %>
+
+    <div class="main-content">
+        <div class="content-wrapper">
+            <h1><i class="fa fa-clipboard-list"></i> Manage Student Attendance</h1>
+
+            <form action="/admin/add-attendance" method="POST">
+                <div class="form-group">
+                    <label for="user_id">Select Student</label>
+                    <select id="user_id" name="user_id" required>
+                        <option value="">-- Select a Student --</option>
+                        <% users.forEach(user => { %>
+                            <option value="<%= user._id %>"><%= user.name %> (<%= user.email %>)</option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject_id">Select Subject</label>
+                    <select id="subject_id" name="subject_id" required>
+                        <option value="">-- Select a Subject --</option>
+                        <% subjects.forEach(subject => { %>
+                            <option value="<%= subject._id %>"><%= subject.subject_name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="present">Present Days</label>
+                        <input type="number" id="present" name="present" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="absent">Absent Days</label>
+                        <input type="number" id="absent" name="absent" min="0" value="0" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Update Attendance</button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

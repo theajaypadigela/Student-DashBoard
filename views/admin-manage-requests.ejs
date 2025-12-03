@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Requests - Admin</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            background: #f5f5f5;
+        }
+
+        .content-wrapper {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-wrapper h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .request-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .request-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin: 0;
+        }
+
+        .request-type {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .request-description {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .request-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .request-date {
+            color: #999;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-resolved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .action-btn {
+            padding: 6px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .action-btn:hover {
+            background: #5568d3;
+        }
+
+        .no-requests {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('sidebar.ejs') %>
+
+    <div class="main-content">
+        <div class="content-wrapper">
+            <h1><i class="fa fa-tasks"></i> Manage Student Requests</h1>
+
+            <% if (requests.length === 0) { %>
+                <div class="no-requests">
+                    <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 20px; display: block;"></i>
+                    No requests found
+                </div>
+            <% } else { %>
+                <% requests.forEach(request => { %>
+                    <div class="request-card">
+                        <div class="request-header">
+                            <h3 class="request-title"><%= request.title %></h3>
+                            <span class="request-type"><%= request.requestType %></span>
+                        </div>
+                        <p class="request-description"><%= request.description %></p>
+                        <div class="request-footer">
+                            <span class="request-date">
+                                <i class="fa fa-calendar"></i> 
+                                <%= new Date(request.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                            </span>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span class="status-badge status-<%= request.status == 0 ? 'pending' : 'resolved' %>">
+                                    <%= request.status == 0 ? 'INITIATED' : 'RESOLVED' %>
+                                </span>
+                                <form action="/admin/resolve-request/<%= request._id %>" method="POST" class="action-form">
+                                    <select name="status" class="action-select">
+                                        <option value="0" <%= request.status == 0 ? 'selected' : '' %>>Initiated</option>
+                                        <option value="1" <%= request.status == 1 ? 'selected' : '' %>>Resolved</option>
+                                    </select>
+                                    <button type="submit" class="action-btn">Update</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </div>
+</body>
+
+</html>
