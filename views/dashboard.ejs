@@ -42,10 +42,8 @@
                         <div class="todo-header">
                             <h2>My Tasks</h2>
                             <div class="todo-input">
-                                <form action="/addTask" method="post">
-                                <input type="text" id="taskInput" name="task" placeholder="Add a new task...">
-                                <button type="submit" >Add Task</button>
-                                </form>
+                                <input type="text" id="taskInput" name="task" placeholder="Add a new task..." autocomplete="off">
+                                <button type="button" id="addTaskBtn">Add Task</button>
                             </div>
                         </div>
                         <ul id="taskList" class="task-list">
@@ -54,9 +52,7 @@
                                     <span><%= list[i].task %></span>
                                     <div class="task-actions">
                                         <button class="complete-btn" onclick="toggleComplete(this)">✓</button>
-                                        <form action="/deleteTask" method="post">
-                                            <button type="submit" class="delete-btn" name="taskId" value="<%= list[i].id %>">×</button>
-                                        </form>
+                                        <button class="delete-btn" onclick="deleteTask('<%= list[i].id %>')">×</button>
                                     </div>
                                 </li>
                             <% } %>
@@ -95,6 +91,80 @@
     </script>
 
     <script>
+        // Add new task without page reload
+        document.getElementById('addTaskBtn').addEventListener('click', async () => {
+            const taskInput = document.getElementById('taskInput');
+            const task = taskInput.value.trim();
+            
+            if (!task) {
+                alert('Please enter a task');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/addTask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ task })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Add the new task to the list
+                    const taskList = document.getElementById('taskList');
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${task}</span>
+                        <div class="task-actions">
+                            <button class="complete-btn" onclick="toggleComplete(this)">✓</button>
+                            <button class="delete-btn" onclick="deleteTask('${data.taskId}')">×</button>
+                        </div>
+                    `;
+                    taskList.appendChild(li);
+                    
+                    // Clear input
+                    taskInput.value = '';
+                } else {
+                    alert('Failed to add task');
+                }
+            } catch (error) {
+                console.error('Error adding task:', error);
+                alert('Error adding task');
+            }
+        });
+        
+        // Delete task without page reload
+        async function deleteTask(taskId) {
+            try {
+                const response = await fetch('/deleteTask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ taskId })
+                });
+                
+                if (response.ok) {
+                    // Remove the task from the DOM
+                    const taskElements = document.querySelectorAll('#taskList li');
+                    taskElements.forEach(li => {
+                        const deleteBtn = li.querySelector('.delete-btn');
+                        if (deleteBtn && deleteBtn.getAttribute('onclick').includes(taskId)) {
+                            li.remove();
+                        }
+                    });
+                } else {
+                    alert('Failed to delete task');
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                alert('Error deleting task');
+            }
+        }
+        
         function toggleComplete(button) {
             const li = button.closest('li');
             li.classList.toggle('completed');

@@ -18,7 +18,18 @@ const port = 3000;
 const saltRounds = 10;
 env.config();
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://studentDashboard:O8I1h7EaKooWVZ9z@cluster0.mdlwrcg.mongodb.net/')
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/student_dashboard';
+const isAtlas = mongoURI.includes('mongodb+srv://');
+
+mongoose.connect(mongoURI, {
+        ...(isAtlas ? {
+            tls: true,
+            tlsAllowInvalidCertificates: false,
+            tlsAllowInvalidHostnames: false,
+        } : {}),
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 75000,
+    })
     .then(async () => {
         console.log('MongoDB connected successfully');
         
@@ -170,15 +181,15 @@ app.get("/dashboard", async (req, res) => {
 
 app.post("/addTask", async (req, res) => {
     const task = req.body.task;
-    await Task.create({ task });
-    res.redirect("/dashboard");
+    const newTask = await Task.create({ task });
+    res.json({ success: true, taskId: newTask._id });
 });
 
 app.post("/deleteTask", async (req, res) => {
     const taskId = req.body.taskId;
     await Task.findByIdAndDelete(taskId);
-    res.redirect("/dashboard");
-})
+    res.json({ success: true });
+});
 
 
 async function fillAttendanceData(email) {
