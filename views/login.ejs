@@ -26,18 +26,26 @@
                 <img src="/assets/avatar.svg" class="avatar" alt="">
                 <h1>WELCOME</h1>
                     <div class="input-container">
-                        <i class="fa-solid fa-user"></i>
+                        <i class="fa-solid fa-user input-icon"></i>
                         <input type="email" name="email" placeholder=" " required>
                         <label>Email</label>
                     </div>
 
                     <div class="input-container">
-                        <i class="fa-solid fa-lock"></i>
-                        <input type="password" name="password" placeholder=" " required>
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="login-password" name="password" placeholder=" " class="password-input" required>
                         <label>Password</label>
+                        <button type="button" class="password-toggle" aria-label="Show password" data-target="login-password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                    <div style="margin-bottom: 10px;"></div>
                 
+                <% if (typeof query !== 'undefined' && query.error === 'not_registered') { %>
+                    <p style="color: red; font-size: 13px; margin-bottom: 8px; text-align: center;">
+                        This Google account is not registered. Contact your admin.
+                    </p>
+                <% } %>
                 <button class="button" style="margin-bottom: 10px;">LOGIN</button>
                 <button type="button" class="google-button" onclick="window.location.href='/auth/google'" >
                     <span class="google-icon">
@@ -52,5 +60,22 @@
 
 
         
+    <script>
+        document.querySelectorAll(".password-toggle").forEach((toggle) => {
+            toggle.addEventListener("click", () => {
+                const targetId = toggle.getAttribute("data-target");
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                toggle.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+                const icon = toggle.querySelector("i");
+                if (icon) {
+                    icon.classList.toggle("fa-eye", !isPassword);
+                    icon.classList.toggle("fa-eye-slash", isPassword);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

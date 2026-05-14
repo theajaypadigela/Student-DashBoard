@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import passport from "passport";
 import { Strategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
 import env from "dotenv";
 import axios from "axios";
@@ -18,7 +19,7 @@ const port = 3000;
 const saltRounds = 10;
 env.config();
 
-const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/student_dashboard';
+const mongoURI = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/student_dashboard';
 const isAtlas = mongoURI.includes('mongodb+srv://');
 
 mongoose.connect(mongoURI, {
@@ -48,6 +49,30 @@ mongoose.connect(mongoURI, {
             });
             console.log('Admin user created successfully');
         }
+
+        const defaultAdminExists = await User.findOne({ email: 'admin@gmail.com' });
+        if (!defaultAdminExists) {
+            const hashedPassword = await bcrypt.hash('admin', saltRounds);
+            await User.create({
+                name: 'Admin',
+                email: 'admin@gmail.com',
+                password: hashedPassword,
+                role: 'admin'
+            });
+            console.log('Admin (admin@gmail.com) created successfully');
+        }
+
+        const guestExists = await User.findOne({ email: 'guestuser@gmail.com' });
+        if (!guestExists) {
+            const hashedPassword = await bcrypt.hash('guestuser', saltRounds);
+            await User.create({
+                name: 'Guest User',
+                email: 'guestuser@gmail.com',
+                password: hashedPassword,
+                role: 'student'
+            });
+            console.log('Guest user created successfully');
+        }
     })
     .catch(err => {
         console.error('MongoDB connection error:', err);
@@ -56,7 +81,7 @@ mongoose.connect(mongoURI, {
 
 app.use(session({
     store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/student_dashboard',
+        mongoUrl: process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/student_dashboard',
         touchAfter: 24 * 3600
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -85,7 +110,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-    res.render("login.ejs");
+    res.render("login.ejs", { query: req.query });
 });
 
 app.get("/register", (req, res) => {
@@ -144,6 +169,23 @@ app.post("/register", async (req, res) => {
 
 app.get("/fail", (req, res) => {
     res.send("Failed to login");
+});
+
+app.get("/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+app.get("/auth/google/secrets", (req, res, next) => {
+    passport.authenticate("google", (err, user) => {
+        if (err) return next(err);
+        if (!user) {
+            return res.redirect("/login?error=not_registered");
+        }
+        req.login(user, (err) => {
+            if (err) return next(err);
+            res.redirect("/dashboard");
+        });
+    })(req, res, next);
 });
 
 let name;
@@ -424,10 +466,20 @@ app.post("/newcomplaint", async (req, res) => {
 app.get("/alumni", async (req, res) => {
 
     const alumni = await Alumni.find({}).sort({ _id: 1 });
-    const alumniWithImgUrl = alumni.map(alum => ({
-        ...alum.toObject(),
-        img_url: `/assets/alumini/${alum.img_url}`
-    }));
+    const alumniWithImgUrl = alumni.map((alum) => {
+        let imageUrl = "/assets/alumini/placeholder.svg";
+        if (alum.img_url) {
+            if (alum.img_url.startsWith("http") || alum.img_url.startsWith("/")) {
+                imageUrl = alum.img_url;
+            } else {
+                imageUrl = `/assets/alumini/${alum.img_url}`;
+            }
+        }
+        return {
+            ...alum.toObject(),
+            img_url: imageUrl
+        };
+    });
     res.render("alumni.ejs", {
         name: name,
         role: userRole,
@@ -436,13 +488,16 @@ app.get("/alumni", async (req, res) => {
 });
 
 // Admin Routes
-app.get("/admin/register-student", (req, res) => {
+app.get("/admin/register-student", async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.redirect("/dashboard");
     }
+    const classIds = await Subject.distinct("class_id");
+    classIds.sort((a, b) => a - b);
     res.render("admin-register-student.ejs", {
         name: name,
-        role: userRole
+        role: userRole,
+        classIds
     });
 });
 
@@ -450,30 +505,39 @@ app.post("/admin/register-student", async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.redirect("/dashboard");
     }
-    
-    const { name: studentName, email, password } = req.body;
+
+    const classIds = await Subject.distinct("class_id");
+    classIds.sort((a, b) => a - b);
+
+    const { name: studentName, email, password, class_id } = req.body;
     try {
         const existingUser = await User.findOne({ email: email });
-        
+
         if (existingUser) {
             return res.render("admin-register-student.ejs", {
                 name: name,
                 role: userRole,
+                classIds,
                 error: "User with this email already exists"
             });
         }
-        
+
         const hashedPassword = await bcrypt.hash(password, saltRounds);
-        await User.create({ 
-            name: studentName, 
-            email, 
-            password: hashedPassword, 
-            role: 'student' 
+        const newUser = await User.create({
+            name: studentName,
+            email,
+            password: hashedPassword,
+            role: 'student'
         });
-        
+
+        if (class_id) {
+            await Student.create({ user_id: newUser._id, class_id: Number(class_id) });
+        }
+
         res.render("admin-register-student.ejs", {
             name: name,
             role: userRole,
+            classIds,
             success: "Student registered successfully"
         });
     } catch (err) {
@@ -481,6 +545,7 @@ app.post("/admin/register-student", async (req, res) => {
         res.render("admin-register-student.ejs", {
             name: name,
             role: userRole,
+            classIds,
             error: "Error registering student"
         });
     }
@@ -595,12 +660,32 @@ app.post("/admin/resolve-complaint/:id", async (req, res) => {
 });
 
 
+passport.use("google", new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        const email = profile.emails[0].value;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return done(null, false, { message: "Access denied. Contact admin to register your account." });
+        }
+        return done(null, user);
+    } catch (err) {
+        return done(err);
+    }
+}));
+
 passport.use("local", new Strategy({ usernameField: "email" }, async function verify(email, password, cd) {
     try {
         const user = await User.findOne({ email: email });
         if (!user) {
             return cd(null, false, { message: "User not found" });
         } else {
+            if (!user.password) {
+                return cd(null, false, { message: "This account uses Google login" });
+            }
             const storedHashedPassword = user.password;
             bcrypt.compare(password, storedHashedPassword, (err, valid) => {
                 if (err) {

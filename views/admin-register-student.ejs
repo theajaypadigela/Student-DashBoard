@@ -5,113 +5,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Student - Admin</title>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/sidebar.css">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/admin/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .main-content {
-            margin-left: 250px;
-            padding: 30px;
-            min-height: 100vh;
-        }
-
-        .content-wrapper {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .content-wrapper h1 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-            font-size: 32px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-    </style>
 </head>
 
 <body>
-    <%- include('sidebar.ejs') %>
+    <%- include("sidebar.ejs") %>
 
-    <div class="main-content">
-        <div class="content-wrapper">
-            <h1><i class="fa fa-user-plus"></i> Register New Student</h1>
+    <nav class="head">
+        <div class="lefticon">
+            <a class="LINK1" href="#">Admin</a>
+        </div>
+        <div class="righticon">
+            <a href="#">
+                <img width="50" src="/assets/Screenshot 2025-02-23 171952.png" alt="Profile">
+            </a>
+        </div>
+    </nav>
 
-            <% if (typeof success !== 'undefined') { %>
-                <div class="alert alert-success">
-                    <%= success %>
-                </div>
+    <div class="main">
+        <div class="page-title-wrap">
+            <h1 class="hd-1">REGISTER STUDENT</h1>
+            <div class="underline"></div>
+        </div>
+
+        <div class="form-card">
+            <h2 class="form-heading"><i class="fa fa-user-plus"></i> Add a new student</h2>
+
+            <% if (typeof success !== 'undefined' && success) { %>
+                <div class="alert alert-success"><%= success %></div>
             <% } %>
 
-            <% if (typeof error !== 'undefined') { %>
-                <div class="alert alert-error">
-                    <%= error %>
-                </div>
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-error"><%= error %></div>
             <% } %>
 
             <form action="/admin/register-student" method="POST">
@@ -127,13 +55,49 @@
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter password" required>
+                    <div class="password-field">
+                        <input type="password" id="password" name="password" placeholder="Enter password" required>
+                        <button type="button" class="password-toggle" aria-label="Show password" data-target="password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <button type="submit" class="submit-btn">Register Student</button>
+                <div class="form-group">
+                    <label for="class_id">Assign Class</label>
+                    <select id="class_id" name="class_id">
+                        <option value="">-- No class assigned --</option>
+                        <% classIds.forEach(cid => { %>
+                            <option value="<%= cid %>">Class <%= cid %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Register Student <span class="arrow">➜</span>
+                </button>
             </form>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll(".password-toggle").forEach((toggle) => {
+            toggle.addEventListener("click", () => {
+                const targetId = toggle.getAttribute("data-target");
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                toggle.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+                const icon = toggle.querySelector("i");
+                if (icon) {
+                    icon.classList.toggle("fa-eye", !isPassword);
+                    icon.classList.toggle("fa-eye-slash", isPassword);
+                }
+            });
+        });
+    </script>
+
 </body>
 
 </html>

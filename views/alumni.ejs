@@ -24,22 +24,43 @@
             <div class="container-2 mt-5">
                 <div class="row">
                     <!-- Card 1 -->
-                     <% for(let i=0;i<aluminiData.length;i++){ %>
+                     <% for(let i=0;i<aluminiData.length;i++){ 
+                        const alumni = aluminiData[i];
+                        const imageSrc = alumni.img_url || "/assets/alumini/placeholder.svg";
+                        const position = alumni.position || alumni.title || "Alumni";
+                        const company = alumni.company || "";
+                        const linkedinUrl = alumni.linkedin || alumni.linkedin_url || "";
+                        const emailValue = alumni.email || alumni.gmail || alumni.gmail_url || "";
+                        let mailtoUrl = "";
+                        if (emailValue) {
+                            if (emailValue.startsWith("mailto:") || emailValue.startsWith("http")) {
+                                mailtoUrl = emailValue;
+                            } else {
+                                mailtoUrl = `mailto:${emailValue}`;
+                            }
+                        }
+                     %>
                     <div class="col-lg-3 col-md-4 col-sm-6 mt-5 mb-5">
                         <div class="card-1">
                             <div class="img-container">
-                                <img src="https://avatar.iran.liara.run/public/boy" alt="Alumni Image" class="img-fluid">
+                                <img src="<%= imageSrc %>" alt="<%= alumni.name %>" class="img-fluid" onerror="this.src='/assets/alumini/placeholder.svg'">
                             </div>
-                            <h1 class="hd-2" class="hd-2" style="white-space: normal; overflow-wrap: break-word;"><%= aluminiData[i].name %></h1>
-                            <p class="pg-1">Software Engineer</p>
-                            <p class="pg-1"><%= aluminiData[i].title %></p>
+                            <h1 class="hd-2" class="hd-2" style="white-space: normal; overflow-wrap: break-word;"><%= alumni.name %></h1>
+                            <p class="pg-1"><%= position %></p>
+                            <% if (company) { %>
+                            <p class="pg-1"><%= company %></p>
+                            <% } %>
                             <ul class="profile-icons">
+                                <% if (linkedinUrl) { %>
                                 <li>
-                                    <a href=<%= aluminiData[i].linkedin_url %> target="_blank"><img src="https://beneficent-dashboard.onrender.com/alumni/linkedin.svg"></a>
+                                    <a href="<%= linkedinUrl %>" target="_blank" rel="noopener noreferrer"><img src="https://beneficent-dashboard.onrender.com/alumni/linkedin.svg"></a>
                                 </li>
+                                <% } %>
+                                <% if (mailtoUrl) { %>
                                 <li>
-                                    <a href=<%= aluminiData[i].gmail_url %> target="_blank"><img src="https://beneficent-dashboard.onrender.com/alumni/gmail.svg"></a>
+                                    <a href="<%= mailtoUrl %>"><img src="https://beneficent-dashboard.onrender.com/alumni/gmail.svg"></a>
                                 </li>
+                                <% } %>
                             </ul>
                         </div>
                     </div>

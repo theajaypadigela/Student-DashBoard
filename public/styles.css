@@ -92,7 +92,7 @@ input{
     margin-left: 30px;
 }
 
-.input-container i {
+.input-container .input-icon {
     color: #888;
     position: absolute;
     left: 25px;
@@ -121,7 +121,37 @@ input{
     pointer-events: none;
 }
 
-.input-container:focus-within i {
+.input-container .password-input {
+    padding-right: 45px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 4px;
+    margin: 0;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    color: #32be8f;
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid #32be8f;
+    outline-offset: 2px;
+    border-radius: 12px;
+}
+
+.input-container:focus-within .input-icon {
     color: #32be8f; 
 }
 
@@ -266,7 +296,7 @@ a{
     .input-container label {
         left: 10px;
     }
-    .fa-solid{
+    .input-container .input-icon{
         visibility: hidden;
     }
 }
@@ -391,7 +421,7 @@ a{
             font-size: 14px;
         }
     }
-    .fa-solid{
+    .input-container .input-icon{
         visibility: hidden;
     }
 }
@@ -422,7 +452,7 @@ a{
         left: 5px;
         font-size: 14px;
     }
-    .fa-solid{
+    .input-container .input-icon{
         visibility: hidden;
     }
 }
