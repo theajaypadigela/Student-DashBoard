@@ -15,11 +15,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+const port = 3000;
 const saltRounds = 10;
 env.config();
-
-const port = process.env.PORT || 3000;
-const googleAuthConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 const mongoURI = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://localhost:27017/student_dashboard';
 const isAtlas = mongoURI.includes('mongodb+srv://');
@@ -173,19 +171,11 @@ app.get("/fail", (req, res) => {
     res.send("Failed to login");
 });
 
-app.get("/auth/google", (req, res, next) => {
-    if (!googleAuthConfigured) {
-        return res.redirect("/login?error=google_not_configured");
-    }
-
-    passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
-});
+app.get("/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
 app.get("/auth/google/secrets", (req, res, next) => {
-    if (!googleAuthConfigured) {
-        return res.redirect("/login?error=google_not_configured");
-    }
-
     passport.authenticate("google", (err, user) => {
         if (err) return next(err);
         if (!user) {
@@ -670,26 +660,22 @@ app.post("/admin/resolve-complaint/:id", async (req, res) => {
 });
 
 
-if (googleAuthConfigured) {
-    passport.use("google", new GoogleStrategy({
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    }, async (accessToken, refreshToken, profile, done) => {
-        try {
-            const email = profile.emails[0].value;
-            const user = await User.findOne({ email });
-            if (!user) {
-                return done(null, false, { message: "Access denied. Contact admin to register your account." });
-            }
-            return done(null, user);
-        } catch (err) {
-            return done(err);
+passport.use("google", new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        const email = profile.emails[0].value;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return done(null, false, { message: "Access denied. Contact admin to register your account." });
         }
-    }));
-} else {
-    console.warn("Google OAuth is disabled because GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set.");
-}
+        return done(null, user);
+    } catch (err) {
+        return done(err);
+    }
+}));
 
 passport.use("local", new Strategy({ usernameField: "email" }, async function verify(email, password, cd) {
     try {
