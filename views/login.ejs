@@ -46,6 +46,11 @@
                         This Google account is not registered. Contact your admin.
                     </p>
                 <% } %>
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <p style="color: red; font-size: 13px; margin-bottom: 8px; text-align: center;">
+                        <%= error %>
+                    </p>
+                <% } %>
                 <button class="button" style="margin-bottom: 10px;">LOGIN</button>
                 <button type="button" class="google-button" onclick="window.location.href='/auth/google'" >
                     <span class="google-icon">

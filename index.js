@@ -110,19 +110,28 @@ app.get("/", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-    res.render("login.ejs", { query: req.query });
+    res.render("login.ejs", { query: req.query, error: null });
 });
 
 app.get("/register", (req, res) => {
     res.render("register.ejs");
 });
 
-app.post("/login",
-    passport.authenticate("local", {
-        successRedirect: "/dashboard",
-        failureRedirect: "/fail"
-    })
-);
+app.post("/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+        if (err) return next(err);
+        if (!user) {
+            return res.render("login.ejs", {
+                query: req.query,
+                error: info?.message || "Failed to login"
+            });
+        }
+        req.login(user, (err) => {
+            if (err) return next(err);
+            res.redirect("/dashboard");
+        });
+    })(req, res, next);
+});
 
 app.get("/logout", (req, res) => {
     req.logout(function (err) {
