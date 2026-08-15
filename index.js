@@ -33,51 +33,73 @@ mongoose.connect(mongoURI, {
     })
     .then(async () => {
         console.log('MongoDB connected successfully');
-        
-        // Update all existing users to have role 'student' if they don't have a role
-        await User.updateMany({ role: { $exists: false } }, { $set: { role: 'student' } });
-        
-        // Create admin user if it doesn't exist
-        const adminExists = await User.findOne({ email: 'adminUser@gmail.com' });
-        if (!adminExists) {
-            const hashedPassword = await bcrypt.hash('adminUser', saltRounds);
-            await User.create({
-                name: 'Admin User',
-                email: 'adminUser@gmail.com',
-                password: hashedPassword,
-                role: 'admin'
-            });
-            console.log('Admin user created successfully');
+
+        // Older versions of the schema had a unique `username` field. The current
+        // schema has no such field, so every user is written with username: null
+        // and the leftover index rejects all but the first of them.
+        try {
+            await User.collection.dropIndex('username_1');
+            console.log('Dropped legacy username index');
+        } catch (err) {
+            if (err.codeName !== 'IndexNotFound' && err.code !== 27) {
+                console.error('Could not drop legacy username index:', err.message);
+            }
         }
 
-        const defaultAdminExists = await User.findOne({ email: 'admin@gmail.com' });
-        if (!defaultAdminExists) {
-            const hashedPassword = await bcrypt.hash('admin', saltRounds);
-            await User.create({
-                name: 'Admin',
-                email: 'admin@gmail.com',
-                password: hashedPassword,
-                role: 'admin'
-            });
-            console.log('Admin (admin@gmail.com) created successfully');
-        }
+        // Seeding is best-effort: a failure here must not take down a server that
+        // is already connected and able to serve requests.
+        try {
+            // Update all existing users to have role 'student' if they don't have a role
+            await User.updateMany({ role: { $exists: false } }, { $set: { role: 'student' } });
 
-        const guestExists = await User.findOne({ email: 'guestuser@gmail.com' });
-        if (!guestExists) {
-            const hashedPassword = await bcrypt.hash('guestuser', saltRounds);
-            await User.create({
-                name: 'Guest User',
-                email: 'guestuser@gmail.com',
-                password: hashedPassword,
-                role: 'student'
-            });
-            console.log('Guest user created successfully');
+            // Create admin user if it doesn't exist
+            const adminExists = await User.findOne({ email: 'adminUser@gmail.com' });
+            if (!adminExists) {
+                const hashedPassword = await bcrypt.hash('adminUser', saltRounds);
+                await User.create({
+                    name: 'Admin User',
+                    email: 'adminUser@gmail.com',
+                    password: hashedPassword,
+                    role: 'admin'
+                });
+                console.log('Admin user created successfully');
+            }
+
+            const defaultAdminExists = await User.findOne({ email: 'admin@gmail.com' });
+            if (!defaultAdminExists) {
+                const hashedPassword = await bcrypt.hash('admin', saltRounds);
+                await User.create({
+                    name: 'Admin',
+                    email: 'admin@gmail.com',
+                    password: hashedPassword,
+                    role: 'admin'
+                });
+                console.log('Admin (admin@gmail.com) created successfully');
+            }
+
+            const guestExists = await User.findOne({ email: 'guestuser@gmail.com' });
+            if (!guestExists) {
+                const hashedPassword = await bcrypt.hash('guestuser', saltRounds);
+                await User.create({
+                    name: 'Guest User',
+                    email: 'guestuser@gmail.com',
+                    password: hashedPassword,
+                    role: 'student'
+                });
+                console.log('Guest user created successfully');
+            }
+        } catch (err) {
+            console.error('Startup seeding failed (server still running):', err.message);
         }
     })
     .catch(err => {
         console.error('MongoDB connection error:', err);
         process.exit(-1);
     });
+
+mongoose.connection.on('error', err => {
+    console.error('MongoDB connection error:', err.message);
+});
 
 app.use(session({
     store: MongoStore.create({
