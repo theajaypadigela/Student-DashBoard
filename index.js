@@ -35,15 +35,6 @@ mongoose.connect(mongoURI, {
     })
     .then(async () => {
         console.log('MongoDB connected successfully');
-
-        try {
-            await User.collection.dropIndex('username_1');
-            console.log('Dropped legacy username index');
-        } catch (err) {
-            if (err.codeName !== 'IndexNotFound' && err.code !== 27) {
-                throw err;
-            }
-        }
         
         // Update all existing users to have role 'student' if they don't have a role
         await User.updateMany({ role: { $exists: false } }, { $set: { role: 'student' } });
